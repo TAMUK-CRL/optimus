@@ -1,7 +1,9 @@
-// Z-shaped function equation with closest distance to obstacle as variable
-// a and b locate the extremes of the sloped portion of the curve
-// mF= multiplying factor(return variable); iT= intermediate term used internally; bM= Max sensing range in front of the robot(speed dependent).
-// trip= trip variable from AIS indicating the direction of motion of robot
+//
+//   Z-shaped function equation with closest distance to obstacle as variable
+//   a and b locate the extremes of the sloped portion of the curve
+//   mF= multiplying factor(return variable); iT= intermediate term used internally; bM= Max sensing range in front of the robot(speed dependent).
+//   trip= trip variable from AIS indicating the direction of motion of robot
+//
 
 double zFunc(ArRobot *thisRobot ,ArSick *thisLaser,double bM,int a=1000,int b=2500)
 {
