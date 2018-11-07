@@ -8,7 +8,7 @@
 //   distributed under the License is distributed on an "AS IS" BASIS,
 //   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //   See the License for the specific language governing permissions and
-//   limitations under the License. 
+//   limitations under the License.
 //
 //   Variable Environment Sensing(AES) generates threshold values used for comparision with measured distances
 //   r[0 to 180]= Threshold values; r[181]= max sensing range at current speed
@@ -17,8 +17,10 @@
 //
 
 // Include the ROS C++ APIs
-#include <ros/ros.h>
-#include <std_msgs/Float32MultiArray.h>
+#include<math.h>
+#include<ros/ros.h>
+#include<std_msgs/Float32MultiArray.h>
+#include<nav_msgs/Odometry.h>
 
 std_msgs::Float32MultiArray r;
 double speed; //r[182];//float32[]
@@ -28,21 +30,21 @@ long int m=100,c=80,a=400,bMax=1500;
 int main(int argc, char** argv)
 {
 	// Announce this program to the ROS master as a "node" called "hello_world_node"
-	ros::init(argc, argv, "aes_node");
+	ros::init(argc, argv, "ves_node");
 
 	// Start the node resource managers (communication, time, etc)
 	//ros::start();
-	ros::NodeHandle aesNH;// Create node handle
+	ros::NodeHandle vesNH;// Create node handle
 
 	ros::Rate loop_rate(0.5);
 
-	ros::Publisher aes_pub("aesEnv",&r);
+	ros::Publisher ves_pub("vesEnv",&r);
 
-	aesNH.advertise(aes_pub,100);
+	aesNH.advertise(ves_pub,100);
 
 	//r.layout.dim=(std_msgs::MultiArrayDimension *);
 	r.layout.dim.push_back(std_msgs::MultiArrayDimension());
-	r.layout.dim[0].label="aesRange";
+	r.layout.dim[0].label="vesRangeVals";
 	r.layout.dim[0].size=182;
 	r.layout.dim[0].stride=1;
 	r.layout.data_offset=0;
@@ -62,7 +64,7 @@ int main(int argc, char** argv)
 
 		// Broadcast log message
 		//ROS_INFO_STREAM("Hello, world!");
-		aes_pub.publish(r);
+		ves_pub.publish(r);
 
 		// Process ROS callbacks until receiving a SIGINT (ctrl-c)
 		ros::spinOnce();
