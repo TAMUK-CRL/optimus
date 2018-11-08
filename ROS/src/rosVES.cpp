@@ -16,7 +16,11 @@
 //   m= controls minimum sensing range at zero speed, higher the value less is the sensing range (set to 100); c= linearity of the curve, greater the value higher the linearity (set to 80)
 //
 
-// Include the ROS C++ APIs
+//
+// g++ rosVES.cpp -o ves_node -I/opt/ros/melodic/include -L/opt/ros/melodic/lib -Wl,-rpath,/opt/ros/melodic/lib -lroscpp -lrosconsole -lrostime -lroscpp_serialization
+//
+
+// Include the ROS C++ APIs and math library
 #include<math.h>
 #include<ros/ros.h>
 #include<std_msgs/Float32MultiArray.h>
@@ -25,12 +29,15 @@
 std_msgs::Float32MultiArray r;
 double robotSpeed; //r[182];//float32[]
 long int m=100,c=80,a=400,bMax=1500;
+long int b;
 
+// Subscriber callback
 void robotPoseCB(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	// Get pose and calculate velocity of robot
 	robotSpeed=msg->twist.twist.linear.x;// Get speed from the robot microprocessor
 }
+
 // Standard C++ entry point
 int main(int argc, char** argv)
 {
@@ -44,7 +51,7 @@ int main(int argc, char** argv)
 	ros::Rate loop_rate(0.5);
 
 	ros::Publisher ves_pub=vesNH.advertise<std_msgs::Float32MultiArray>("vesEnv",100);//&r);
-	ros::Subscriber robotPose=vesNH.subscribe("/RosAria/pose",100);
+	ros::Subscriber robotPose=vesNH.subscribe("/RosAria/pose",100,robotPoseCB);
 
 	//aesNH.advertise(ves_pub,100);
 
@@ -54,7 +61,7 @@ int main(int argc, char** argv)
 	r.layout.dim[0].size=182;
 	r.layout.dim[0].stride=1;
 	r.layout.data_offset=0;
-	r.data_length=182;
+	//r.data_length=182;
 
 	int count=0;
 	while(ros::ok())
@@ -64,10 +71,12 @@ int main(int argc, char** argv)
 		b=bMax/(1+exp((m-robotSpeed)/c));// Sigmoidal function equation with speed as variable
 		for(int i=0;i<181;i++)
 		{
-			// r.data.push_back(abs((a*b)/sqrt(pow((b*cos(i*PI/180)),2)+pow((a*sin(i*PI/180)),2))));// Use this if next one fails
-			r.data[i]=abs((a*b)/sqrt(pow((b*cos(i*PI/180)),2)+pow((a*sin(i*PI/180)),2)));// Elliptical threshold function r(theta)=ab/sqrt[(bcos(theta))^2+(asin(theta))^2]
+			r.data.push_back(abs((a*b)/sqrt(pow((b*cos(i*M_PI/180)),2)+pow((a*sin(i*M_PI/180)),2))));// Use this if next one fails
+			//r.data[i]=abs((a*b)/sqrt(pow((b*cos(i*M_PI/180)),2)+pow((a*sin(i*M_PI/180)),2)));// Elliptical threshold function r(theta)=ab/sqrt[(bcos(theta))^2+(asin(theta))^2]
 		}
-		r.data[181]=b;// Put current max sensing range at the end
+		// Put current max sensing range at the end
+		r.data.push_back(b);
+		//r.data[181]=b;
 
 		// Broadcast log message
 		//ROS_INFO_STREAM("Hello, world!");
