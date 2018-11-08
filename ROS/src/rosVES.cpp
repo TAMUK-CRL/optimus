@@ -23,9 +23,14 @@
 #include<nav_msgs/Odometry.h>
 
 std_msgs::Float32MultiArray r;
-double speed; //r[182];//float32[]
+double robotSpeed; //r[182];//float32[]
 long int m=100,c=80,a=400,bMax=1500;
 
+void robotPoseCB(const nav_msgs::Odometry::ConstPtr& msg)
+{
+	// Get pose and calculate velocity of robot
+	robotSpeed=msg->twist.twist.linear.x;// Get speed from the robot microprocessor
+}
 // Standard C++ entry point
 int main(int argc, char** argv)
 {
@@ -38,13 +43,14 @@ int main(int argc, char** argv)
 
 	ros::Rate loop_rate(0.5);
 
-	ros::Publisher ves_pub("vesEnv",&r);
+	ros::Publisher ves_pub=vesNH.advertise<std_msgs::Float32MultiArray>("vesEnv",100);//&r);
+	ros::Subscriber robotPose=vesNH.subscribe("/RosAria/pose",100);
 
-	aesNH.advertise(ves_pub,100);
+	//aesNH.advertise(ves_pub,100);
 
 	//r.layout.dim=(std_msgs::MultiArrayDimension *);
 	r.layout.dim.push_back(std_msgs::MultiArrayDimension());
-	r.layout.dim[0].label="vesRangeVals";
+	r.layout.dim[0].label="vesRangeValsPlusMaxRange";
 	r.layout.dim[0].size=182;
 	r.layout.dim[0].stride=1;
 	r.layout.data_offset=0;
@@ -53,24 +59,24 @@ int main(int argc, char** argv)
 	int count=0;
 	while(ros::ok())
 	{
+		r.data.clear();
 		// Calculate envelope limits
-		speed=// Subscribe to pose2D					// Get speed from the robot microprocessor and set
-		b=bMax/(1+exp((m-speed)/c));					// Sigmoidal function equation with speed as variable
+		b=bMax/(1+exp((m-robotSpeed)/c));// Sigmoidal function equation with speed as variable
 		for(int i=0;i<181;i++)
 		{
+			// r.data.push_back(abs((a*b)/sqrt(pow((b*cos(i*PI/180)),2)+pow((a*sin(i*PI/180)),2))));// Use this if next one fails
 			r.data[i]=abs((a*b)/sqrt(pow((b*cos(i*PI/180)),2)+pow((a*sin(i*PI/180)),2)));// Elliptical threshold function r(theta)=ab/sqrt[(bcos(theta))^2+(asin(theta))^2]
 		}
-		r.data[181]=b;
+		r.data[181]=b;// Put current max sensing range at the end
 
 		// Broadcast log message
 		//ROS_INFO_STREAM("Hello, world!");
 		ves_pub.publish(r);
 
 		// Process ROS callbacks until receiving a SIGINT (ctrl-c)
-		ros::spinOnce();
+		ros::spinOnce();// Check with ros::spin() if spinOnce() doesnt work
 
 		// Clear aesRange and sleep
-		r.data.clear();
 		loop_rate.sleep();
 		++count;
 	}
