@@ -27,7 +27,7 @@
 #include<nav_msgs/Odometry.h>
 
 std_msgs::Float32MultiArray r;
-double robotSpeed; //r[182];//float32[]
+double robotSpeed;
 long int m=100,c=80,a=400,bMax=1500;
 long int b;
 
@@ -41,27 +41,22 @@ void robotPoseCB(const nav_msgs::Odometry::ConstPtr& msg)
 // Standard C++ entry point
 int main(int argc, char** argv)
 {
-	// Announce this program to the ROS master as a "node" called "hello_world_node"
+	// Announce this program to the ROS master
 	ros::init(argc, argv, "ves_node");
 
 	// Start the node resource managers (communication, time, etc)
-	//ros::start();
 	ros::NodeHandle vesNH;// Create node handle
 
 	ros::Rate loop_rate(0.5);
 
-	ros::Publisher ves_pub=vesNH.advertise<std_msgs::Float32MultiArray>("vesEnv",100);//&r);
+	ros::Publisher ves_pub=vesNH.advertise<std_msgs::Float32MultiArray>("vesEnv",100);
 	ros::Subscriber robotPose=vesNH.subscribe("/RosAria/pose",100,robotPoseCB);
 
-	//aesNH.advertise(ves_pub,100);
-
-	//r.layout.dim=(std_msgs::MultiArrayDimension *);
 	r.layout.dim.push_back(std_msgs::MultiArrayDimension());
 	r.layout.dim[0].label="vesRangeValsPlusMaxRange";
 	r.layout.dim[0].size=182;
 	r.layout.dim[0].stride=1;
 	r.layout.data_offset=0;
-	//r.data_length=182;
 
 	int count=0;
 	while(ros::ok())
@@ -71,27 +66,22 @@ int main(int argc, char** argv)
 		b=bMax/(1+exp((m-robotSpeed)/c));// Sigmoidal function equation with speed as variable
 		for(int i=0;i<181;i++)
 		{
-			r.data.push_back(abs((a*b)/sqrt(pow((b*cos(i*M_PI/180)),2)+pow((a*sin(i*M_PI/180)),2))));// Use this if next one fails
-			//r.data[i]=abs((a*b)/sqrt(pow((b*cos(i*M_PI/180)),2)+pow((a*sin(i*M_PI/180)),2)));// Elliptical threshold function r(theta)=ab/sqrt[(bcos(theta))^2+(asin(theta))^2]
+			r.data.push_back(abs((a*b)/sqrt(pow((b*cos(i*M_PI/180)),2)+pow((a*sin(i*M_PI/180)),2))));
 		}
 		// Put current max sensing range at the end
 		r.data.push_back(b);
-		//r.data[181]=b;
 
 		// Broadcast log message
-		//ROS_INFO_STREAM("Hello, world!");
+		//ROS_INFO_STREAM("");
 		ves_pub.publish(r);
 
 		// Process ROS callbacks until receiving a SIGINT (ctrl-c)
 		ros::spinOnce();// Check with ros::spin() if spinOnce() doesnt work
 
-		// Clear aesRange and sleep
+		// sleep
 		loop_rate.sleep();
 		++count;
 	}
-
-	// Stop the node's resources
-	//ros::shutdown();
 
 	// Exit tranquilly
 	return 0;

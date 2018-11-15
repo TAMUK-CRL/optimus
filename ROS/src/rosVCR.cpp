@@ -28,7 +28,7 @@
 #include<nav_msgs/Odometry.h>
 
 std_msgs::Float32MultiArray lmvC,rmvC;
-double robotSpeed; //r[182];//float32[]
+double robotSpeed;
 long int m=100,c=80,a=400,bMax=1500;
 long int b;
 
@@ -42,11 +42,10 @@ void robotPoseCB(const nav_msgs::Odometry::ConstPtr& msg)
 // Standard C++ entry point
 int main(int argc, char** argv)
 {
-	// Announce this program to the ROS master as a "node" called "hello_world_node"
+	// Announce this program to the ROS master
 	ros::init(argc, argv, "vcr_node");
 
 	// Start the node resource managers (communication, time, etc)
-	//ros::start();
 	ros::NodeHandle vcrNH;// Create node handle
 
 	ros::Rate loop_rate(0.5);
@@ -55,15 +54,12 @@ int main(int argc, char** argv)
 	ros::Publisher vcr_rmvC_pub=vcrNH.advertise<std_msgs::Float32MultiArray>("vcrRMVC",100);
 	//ros::Subscriber robotPose=vcrNH.subscribe("/RosAria/pose",100,robotPoseCB);
 
-	//aesNH.advertise(ves_pub,100);
-
-	//r.layout.dim=(std_msgs::MultiArrayDimension *);
 	lmvC.layout.dim.push_back(std_msgs::MultiArrayDimension());
 	lmvC.layout.dim[0].label="vcrLeftWheelControl";
 	lmvC.layout.dim[0].size=2;
 	lmvC.layout.dim[0].stride=1;
 	lmvC.layout.data_offset=0;
-	
+
 	rmvC.layout.dim.push_back(std_msgs::MultiArrayDimension());
 	rmvC.layout.dim[0].label="vcrRightWheelControl";
 	rmvC.layout.dim[0].size=2;
@@ -78,45 +74,34 @@ int main(int argc, char** argv)
 			// Clear control vectors
 			lmvC.data.clear();
 			rmvC.data.clear();
-			
+
 			// Push value of zero in them
 			lmvC.data.push_back(0.0);// Check for a better way to do this
 			lmvC.data.push_back(0.0);
-			
+
 			rmvC.data.push_back(0.0);
 			rmvC.data.push_back(0.0);
-			
+
 		}
 		// Calculate controlled velocities
-		//	cr[0]=lmvCp+(mF*(lmvUc-lmvCp));
+		//	cr[0]=lmvCp+(mF*(lmvUc-lmvCp));// vcr(ArRobot *thisRobot,double cr[2],double lmvUc,double rmvUc,double mF, double lmvCp,double rmvCp)
 		//  cr[1]=rmvCp+(mF*(rmvUc-rmvCp));
 		lmvC.data.push_back();
 		rmvC.data.push_back();
 
 		// Broadcast log message
-		//ROS_INFO_STREAM("Hello, world!");
+		//ROS_INFO_STREAM("");
 		vcr_lmvC_pub.publish(lmvC);
 		vcr_rmvC_pub.publish(rmvC);
 
 		// Process ROS callbacks until receiving a SIGINT (ctrl-c)
 		ros::spinOnce();// Check with ros::spin() if spinOnce() doesnt work
 
-		// Clear aesRange and sleep
+		// sleep
 		loop_rate.sleep();
 		++count;
 	}
 
-	// Stop the node's resources
-	//ros::shutdown();
-
 	// Exit tranquilly
 	return 0;
-}
-
-
-double *vcr(ArRobot *thisRobot,double cr[2],double lmvUc,double rmvUc,double mF, double lmvCp,double rmvCp)
-{
-	cr[0]=lmvCp+(mF*(lmvUc-lmvCp));
-	cr[1]=rmvCp+(mF*(rmvUc-rmvCp));
-	return cr;
 }
