@@ -19,7 +19,10 @@
 
 
 // Add headers
-
+#include<sensor_msgs/PointCloud2.h>
+#include<sensor_msgs/PointCloud.h>
+#include<ros/ros.h>
+#include<std_msgs/Float32MultiArray.h>
 
 int getSonar(ArRobot *thisRobot,int r)
 {
@@ -340,8 +343,16 @@ int read(ArRobot *thisRobot,int sensor_number)// This code defines the sensor gr
 
 int main()
 {
-  // init Node
-  // add publisher
+  // Announce this program to the ROS master
+	ros::init(argc, argv, "zoner_node");
+
+	// Start the node resource managers (communication, time, etc)
+	ros::NodeHandle zonerNH;// Create node handle
+
+	ros::Rate loop_rate(0.5);
+
+	ros::Publisher zoner_pub=zonerNH.advertise<std_msgs::Float32MultiArray>("8BitZones",100);
+	ros::Subscriber robotPose=zonerNH.subscribe("/RosAria/pose",100,robotPoseCB);
   // add subscriber
   // get zone array
 }
