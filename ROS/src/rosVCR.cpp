@@ -28,15 +28,42 @@
 #include<nav_msgs/Odometry.h>
 
 std_msgs::Float32MultiArray lmvC,rmvC;
-double robotSpeed;
-long int m=100,c=80,a=400,bMax=1500;
-long int b;
+double robotSpeed,mF,iT;
+long int a=1000,b=2500,bM=0;
 
 // Subscriber callback
-void robotPoseCB(const nav_msgs::Odometry::ConstPtr& msg)
+void vesBValCB(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
-	// Get pose and calculate velocity of robot
-	robotSpeed=msg->twist.twist.linear.x;// Get speed from the robot microprocessor
+	// Get max sensing range from 'ves_node'
+	//float r.layout.dim[0].size=182;
+	//float r.layout.dim[0].stride=1;
+	bM=msg->data.back();//Use back() to pull last element
+	zFunc();
+}
+
+void zFunc()
+{
+	//double iT;
+	// Z-function equation, refer Mathworks.com help for zmf under fuzzy for more details
+	if(bM<=a)
+	{
+		mF=1;
+	}
+	else if(a<=bM && bM<=(a+b)/2)
+	{
+		iT=(bM-a)/(b-a);
+		mF=1-2*pow(iT,2.0);
+	}
+	else if((a+b)/2<=bM && bM<=b)
+	{
+		iT=(bM-b)/(b-a);
+		mF=2*pow(iT,2.0);
+	}
+	else
+	{
+		mF=0;
+	}
+	//return mF;
 }
 
 // Standard C++ entry point
@@ -52,7 +79,7 @@ int main(int argc, char** argv)
 
 	ros::Publisher vcr_lmvC_pub=vcrNH.advertise<std_msgs::Float32MultiArray>("vcrLMVC",100);
 	ros::Publisher vcr_rmvC_pub=vcrNH.advertise<std_msgs::Float32MultiArray>("vcrRMVC",100);
-	//ros::Subscriber robotPose=vcrNH.subscribe("/RosAria/pose",100,robotPoseCB);
+	ros::Subscriber vesBVal=vcrNH.subscribe("/ves_node/vesEnv",100,vesBValCB);
 
 	lmvC.layout.dim.push_back(std_msgs::MultiArrayDimension());
 	lmvC.layout.dim[0].label="vcrLeftWheelControl";
@@ -83,11 +110,16 @@ int main(int argc, char** argv)
 			rmvC.data.push_back(0.0);
 
 		}
-		// Calculate controlled velocities
-		//	cr[0]=lmvCp+(mF*(lmvUc-lmvCp));// vcr(ArRobot *thisRobot,double cr[2],double lmvUc,double rmvUc,double mF, double lmvCp,double rmvCp)
-		//  cr[1]=rmvCp+(mF*(rmvUc-rmvCp));
-		lmvC.data.push_back();
-		rmvC.data.push_back();
+
+		if(bM==0)
+		{
+			// Calculate controlled velocities
+			//	cr[0]=lmvCp+(mF*(lmvUc-lmvCp));// vcr(ArRobot *thisRobot,double cr[2],double lmvUc,double rmvUc,double mF, double lmvCp,double rmvCp)
+			//  cr[1]=rmvCp+(mF*(rmvUc-rmvCp));
+			lmvC.data.push_back();
+			rmvC.data.push_back();
+		}
+
 
 		// Broadcast log message
 		//ROS_INFO_STREAM("");
