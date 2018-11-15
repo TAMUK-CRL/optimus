@@ -27,23 +27,32 @@
 #include<std_msgs/Float32MultiArray.h>
 #include<nav_msgs/Odometry.h>
 
-std_msgs::Float32MultiArray lmvC,rmvC;
-double robotSpeed,mF,iT;
-long int a=1000,b=2500,bM=0;
 
-// Subscriber callback
+std_msgs::Float32MultiArray lmvC,rmvC;
+
+//zFunction parameters
+double mF,iT,lmvUC,rmvUC;
+long int a=1000,b=2500;
+
+// Subscriber callbacks
 void vesBValCB(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
 	// Get max sensing range from 'ves_node'
 	//float r.layout.dim[0].size=182;
 	//float r.layout.dim[0].stride=1;
-	bM=msg->data.back();//Use back() to pull last element
-	zFunc();
+	//bM=msg->data.back();//Use back() to pull last element;
+	zFunc(msg->data.back());//check data type
 }
 
-void zFunc()
+void aisWheelValCB(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
-	//double iT;
+	// Get raw wheel velocities from 'ais_node'
+
+}
+
+// Sigmoidal function to generate multiplication factor
+void zFunc(long int bM=0)
+{
 	// Z-function equation, refer Mathworks.com help for zmf under fuzzy for more details
 	if(bM<=a)
 	{
@@ -63,7 +72,6 @@ void zFunc()
 	{
 		mF=0;
 	}
-	//return mF;
 }
 
 // Standard C++ entry point
@@ -80,6 +88,7 @@ int main(int argc, char** argv)
 	ros::Publisher vcr_lmvC_pub=vcrNH.advertise<std_msgs::Float32MultiArray>("vcrLMVC",100);
 	ros::Publisher vcr_rmvC_pub=vcrNH.advertise<std_msgs::Float32MultiArray>("vcrRMVC",100);
 	ros::Subscriber vesBVal=vcrNH.subscribe("/ves_node/vesEnv",100,vesBValCB);
+	ros::Subscriber aisWheelVal=vcrNH.subscribe("/ais_node/aisWheelVelVal",100,aisWheelValCB);
 
 	lmvC.layout.dim.push_back(std_msgs::MultiArrayDimension());
 	lmvC.layout.dim[0].label="vcrLeftWheelControl";
@@ -114,10 +123,8 @@ int main(int argc, char** argv)
 		if(bM==0)
 		{
 			// Calculate controlled velocities
-			//	cr[0]=lmvCp+(mF*(lmvUc-lmvCp));// vcr(ArRobot *thisRobot,double cr[2],double lmvUc,double rmvUc,double mF, double lmvCp,double rmvCp)
-			//  cr[1]=rmvCp+(mF*(rmvUc-rmvCp));
-			lmvC.data.push_back();
-			rmvC.data.push_back();
+			lmvC.data.push_back(lmvC.data.front()+(mF*(lmvUC-lmvC.data.front())));
+			rmvC.data.push_back(rmvC.data.front()+(mF*(rmvUC-rmvC.data.front())));
 		}
 
 
